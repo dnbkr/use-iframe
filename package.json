@@ -1,8 +1,15 @@
 {
   "name": "use-iframe",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Two way communication between react components through iframes",
-  "keywords": ["react", "hooks", "iframe", "ipc", "communication", "state"],
+  "keywords": [
+    "react",
+    "hooks",
+    "iframe",
+    "ipc",
+    "communication",
+    "state"
+  ],
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "files": [
