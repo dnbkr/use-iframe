@@ -16,7 +16,7 @@ or
 yarn add use-iframe
 ```
 
-The library is written in Typescript and ships with it's own type definitions to no additional type defs need to be installed.
+The library is written in Typescript and ships with it's own type definitions so no additional type defs need to be installed.
 
 ## Usage
 
