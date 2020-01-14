@@ -1,0 +1,27 @@
+{
+  "name": "use-iframe",
+  "version": "0.1.0",
+  "description": "Two way communication between react components through iframes",
+  "keywords": ["react", "hooks", "iframe", "ipc", "communication", "state"],
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "author": "Daniel Baker <danbaker@me.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coffeedoughnuts/use-iframe"
+  },
+  "scripts": {
+    "build": "tsc --module commonjs"
+  },
+  "devDependencies": {
+    "@types/react": "^16.9.17",
+    "typescript": "^3.7.4"
+  },
+  "peerDependencies": {
+    "react": "^16.12.0"
+  }
+}
