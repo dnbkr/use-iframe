@@ -1,4 +1,4 @@
-# use iframe
+# Use Iframe Hooks
 
 A collection of React Hooks to facilitate communication between iframes and their parents.
 
