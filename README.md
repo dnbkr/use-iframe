@@ -184,7 +184,7 @@ export const Parent = () => {
     console.log("Someone Clicked Hello!")
   }, [])
 
-  useIframeEvent("hello-btn-clicked", onHelloClicked, ref)
+  useIframeEvent("hello-btn-clicked", onHelloClicked, { ref })
 
   return (
     <div>
@@ -232,7 +232,7 @@ import { useIframeSharedState } from 'use-iframe';
 export const Parent = () => {
   const ref = useRef(null)
 
-  const [state, setState] = useIframeSharedState({ count: 1 }, ref);
+  const [state, setState] = useIframeSharedState({ count: 1 }, { ref });
 
   const onIncrease = () => setState(state => ({ ...state, count: state.count + 1 }))
 

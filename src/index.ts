@@ -9,6 +9,7 @@ import {
 
 interface Options {
   ref?: RefObject<HTMLIFrameElement>;
+  skip?: boolean;
 }
 
 type MessageDispatcher<Message> = (message: Message) => void;
@@ -43,6 +44,8 @@ export function useIframe<Message = any>(
   handleMessage: MessageHandler<Message>,
   options?: Options
 ): UseIframeResult<Message> {
+  const skip = options?.skip === true
+
   const isParent = options?.ref !== undefined;
 
   const dispatch = useCallback(
@@ -70,28 +73,21 @@ export function useIframe<Message = any>(
   );
 
   useEffect(() => {
+    if (skip) {
+      return
+    }
     window.addEventListener("message", eventListener);
     return () => window.removeEventListener("message", eventListener);
-  }, [eventListener]);
+  }, [skip, eventListener]);
 
   return [dispatch];
 }
 
 export function useIframeEvent<EventName = string>(
-  eventName: EventName
-): [() => void];
-
-export function useIframeEvent<EventName = string>(
-  eventName: EventName,
-  handleEvent: () => void,
-  ref: RefObject<HTMLIFrameElement>
-): void;
-
-export function useIframeEvent<EventName = string>(
   eventName: EventName,
   handleEvent?: () => void,
-  ref?: RefObject<HTMLIFrameElement>
-): void | [() => void] {
+  options?: Options
+): [() => void] {
   const handleMessage: MessageHandler<EventName> = useCallback(
     event => {
       if (handleEvent && event === eventName) {
@@ -101,15 +97,11 @@ export function useIframeEvent<EventName = string>(
     [handleEvent, eventName]
   );
 
-  const [dispatch] = useIframe(handleMessage, { ref });
+  const [dispatch] = useIframe(handleMessage, options);
 
   const onEventHandler = useCallback(() => {
     dispatch(eventName);
   }, [eventName, dispatch]);
-
-  if (ref) {
-    return;
-  }
 
   return [onEventHandler];
 }
@@ -121,8 +113,10 @@ type SharedStateMessageType<S> =
 
 export function useIframeSharedState<S>(
   initialState: S | (() => S),
-  ref?: RefObject<HTMLIFrameElement>
+  options?: Options
 ): [S, Dispatch<SetStateAction<S>>] {
+  const skip = options?.skip === true
+
   const [localState, setLocalState] = useState<S>(initialState);
   const [mounted, setMounted] = useState(false);
 
@@ -140,23 +134,29 @@ export function useIframeSharedState<S>(
     [setMounted]
   );
 
-  const isParent = ref !== undefined;
+  const isParent = options?.ref !== undefined;
 
-  const [dispatch] = useIframe(handler, { ref });
+  const [dispatch] = useIframe(handler, options);
 
   useEffect(() => {
+    if (skip) {
+      return
+    }
     if (!isParent) {
       dispatch({ type: `__private_mounted` });
       return () => dispatch({ type: "__private_unmounted" });
     }
     return;
-  }, [isParent, dispatch]);
+  }, [skip, isParent, dispatch]);
 
   useEffect(() => {
+    if (skip) {
+      return
+    }
     if (isParent && mounted) {
       dispatch({ type: "__private_set-state", state: localState });
     }
-  }, [isParent, mounted, localState, dispatch]);
+  }, [skip, isParent, mounted, localState, dispatch]);
 
   return [localState, setLocalState];
 }

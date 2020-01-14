@@ -1,6 +1,6 @@
 {
   "name": "use-iframe",
-  "version": "0.1.2",
+  "version": "1.0.0",
   "description": "Two way communication between react components through iframes",
   "keywords": [
     "react",
