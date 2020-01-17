@@ -70,7 +70,10 @@ export function useIframe<Message = any>(
   const isParent = useMemo(() => ref !== undefined, [ref]);
 
   /** Scope: Parent */
-  const iframeId = ref?.current?.id;
+  const [iframeId, setIframeId] = useState<string>();
+  useEffect(() => {
+    setIframeId(ref?.current?.id);
+  }, [ref]);
 
   const [queue, setQueue] = useState<(Message | PrivateMessage)[]>([]);
 
@@ -191,35 +194,48 @@ export function useIframeEvent<EventName = string>(
   return [onEventHandler];
 }
 
-type SharedStateMessageType<S> = { type: "__private_set-state"; state: S };
+type SharedStateMessageType<S> = {
+  type: "__private_set-state";
+  state: S;
+  time: number;
+};
 
 export function useIframeSharedState<S>(
   initialState: S | (() => S),
   options?: Options
 ): [S, Dispatch<SetStateAction<S>>] {
-  const [localState, setLocalState] = useState<S>(initialState);
+  const stateAge = useRef({
+    local: new Date().getTime(),
+    remote: 0
+  });
+  const [internalState, setInternalState] = useState<S>(initialState);
+  const [remoteState, setRemoteState] = useState<S>(initialState);
 
   const handler: MessageHandler<SharedStateMessageType<S>> = useCallback(
     message => {
       switch (message.type) {
         case "__private_set-state":
-          return setLocalState(message.state);
+          stateAge.current.remote = message.time;
+          return setRemoteState(message.state);
       }
     },
     []
   );
 
-  const isParent = options?.ref !== undefined;
-
   const [dispatch] = useIframe(handler, options);
 
   useEffect(() => {
-    if (isParent) {
-      dispatch({ type: "__private_set-state", state: localState });
-    }
-  }, [isParent, localState, dispatch]);
+    const now = new Date().getTime();
+    stateAge.current.local = now;
+    dispatch({ type: "__private_set-state", state: internalState, time: now });
+  }, [internalState, dispatch]);
 
-  return [localState, setLocalState];
+  const state =
+    stateAge.current.local > stateAge.current.remote
+      ? internalState
+      : remoteState;
+
+  return [state, setInternalState];
 }
 
 type MessageEventListener = (event: MessageEvent) => void;
