@@ -68,7 +68,7 @@ export function useIframe<Message = any>(
   const ref = options?.ref;
 
   const isParent = useMemo(() => ref !== undefined, [ref]);
-  const isChild = !isParent && window !== window.top
+  const isChild = !isParent && window !== window.top;
 
   /** Scope: Parent */
   const [iframeId, setIframeId] = useState<string>();
@@ -83,13 +83,23 @@ export function useIframe<Message = any>(
   /** Scope Parent */
   const isChildMounted = childId !== undefined;
 
-  const dispatch = useCallback((message: Message) => {
-    setQueue(q => [...q, message]);
-  }, []);
+  const dispatch = useCallback(
+    (message: Message) => {
+      if (isParent || isChild) {
+        setQueue(q => [...q, message]);
+      }
+    },
+    [isParent, isChild]
+  );
 
-  const dispatchPrivate = useCallback((message: PrivateMessage) => {
-    setQueue(q => [...q, message]);
-  }, []);
+  const dispatchPrivate = useCallback(
+    (message: PrivateMessage) => {
+      if (isParent || isChild) {
+        setQueue(q => [...q, message]);
+      }
+    },
+    [isParent, isChild]
+  );
 
   const handlePrivateMessage = useCallback(
     (message: PrivateMessage) => {
@@ -107,11 +117,11 @@ export function useIframe<Message = any>(
     (message: Message | PrivateMessage) => {
       if (isParent && ref?.current) {
         ref.current.contentWindow?.postMessage(encodeMessage(message), "*");
-      } else if (isChild) {
+      } else if (isParent === false) {
         window.parent.postMessage(encodeMessage(message, childId), "*");
       }
     },
-    [isParent, isChild, childId, ref]
+    [isParent, childId, ref]
   );
 
   useEffect(() => {
@@ -121,13 +131,13 @@ export function useIframe<Message = any>(
         setQueue(q => q.slice(1));
         postMessage(message);
       }
-    } else if (isChild) {
+    } else {
       if (message) {
         setQueue(q => q.slice(1));
         postMessage(message);
       }
     }
-  }, [isParent, isChild, isChildMounted, postMessage, queue]);
+  }, [isParent, isChildMounted, postMessage, queue]);
 
   const eventListener = useCallback(
     (event: MessageEvent) => {
@@ -141,19 +151,19 @@ export function useIframe<Message = any>(
             if (iframeId === fromId) {
               handleMessage(message, dispatch);
             }
-          } else if (isChild) {
+          } else {
             handleMessage(message, dispatch);
           }
         }
       }
     },
-    [handlePrivateMessage, isChild, isParent, iframeId, handleMessage, dispatch]
+    [handlePrivateMessage, isParent, iframeId, handleMessage, dispatch]
   );
 
   useEventListener(eventListener);
 
   useEffect(() => {
-    if (isChild) {
+    if (!isParent) {
       const iframes = Array.from(
         window.parent.document.getElementsByTagName("iframe")
       );
@@ -163,7 +173,7 @@ export function useIframe<Message = any>(
         setChildId(iframe.id);
       }
     }
-  }, [dispatchPrivate, isChild]);
+  }, [dispatchPrivate, isParent]);
 
   if (isParent && ref?.current && !iframeId) {
     throw new Error("iframes must have an ID set");
