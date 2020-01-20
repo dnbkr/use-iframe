@@ -68,6 +68,7 @@ export function useIframe<Message = any>(
   const ref = options?.ref;
 
   const isParent = useMemo(() => ref !== undefined, [ref]);
+  const isChild = !isParent && window !== window.top
 
   /** Scope: Parent */
   const [iframeId, setIframeId] = useState<string>();
@@ -106,11 +107,11 @@ export function useIframe<Message = any>(
     (message: Message | PrivateMessage) => {
       if (isParent && ref?.current) {
         ref.current.contentWindow?.postMessage(encodeMessage(message), "*");
-      } else if (isParent === false) {
+      } else if (isChild) {
         window.parent.postMessage(encodeMessage(message, childId), "*");
       }
     },
-    [isParent, childId, ref]
+    [isParent, isChild, childId, ref]
   );
 
   useEffect(() => {
@@ -120,13 +121,13 @@ export function useIframe<Message = any>(
         setQueue(q => q.slice(1));
         postMessage(message);
       }
-    } else {
+    } else if (isChild) {
       if (message) {
         setQueue(q => q.slice(1));
         postMessage(message);
       }
     }
-  }, [isParent, isChildMounted, postMessage, queue]);
+  }, [isParent, isChild, isChildMounted, postMessage, queue]);
 
   const eventListener = useCallback(
     (event: MessageEvent) => {
@@ -140,19 +141,19 @@ export function useIframe<Message = any>(
             if (iframeId === fromId) {
               handleMessage(message, dispatch);
             }
-          } else {
+          } else if (isChild) {
             handleMessage(message, dispatch);
           }
         }
       }
     },
-    [handlePrivateMessage, isParent, iframeId, handleMessage, dispatch]
+    [handlePrivateMessage, isChild, isParent, iframeId, handleMessage, dispatch]
   );
 
   useEventListener(eventListener);
 
   useEffect(() => {
-    if (!isParent) {
+    if (isChild) {
       const iframes = Array.from(
         window.parent.document.getElementsByTagName("iframe")
       );
@@ -162,7 +163,7 @@ export function useIframe<Message = any>(
         setChildId(iframe.id);
       }
     }
-  }, [dispatchPrivate, isParent]);
+  }, [dispatchPrivate, isChild]);
 
   if (isParent && ref?.current && !iframeId) {
     throw new Error("iframes must have an ID set");
